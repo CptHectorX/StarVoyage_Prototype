@@ -5,7 +5,13 @@
 **Lokaler Pfad:** D:\Godot_Projects\StarVoyage_Prototype
 **Referenz-Spiel:** Star Valor
 **Status:** Prototyp – ein Sektor
+**Revision:** 5
 **Letzte Aktualisierung:** 28.06.2026
+
+> **Versionierung:** Die Revision oben wird bei JEDER inhaltlichen Änderung am SDD um 1
+> erhöht. So lässt sich auf einen Blick prüfen, ob die Datei im Projektordner neuer ist
+> als die im Repo. Beim Commit gehört die Revisionsnummer in die Commit-Message
+> (z. B. "Update SDD r5: ...").
 
 ---
 
