@@ -37,6 +37,17 @@ aussehen. Vorbild für Look & Feel ist **Star Valor**.
 - Gute Triebwerke = schnelles Bremsen (Schub-Wert bestimmt, wie schnell man die
   Geschwindigkeit ändern kann).
 
+### Technische Umsetzung Player
+
+- **Player = `Node3D` mit selbst gerechnetem Velocity-Vektor.** Newton-Physik
+  (Momentum, Schub, Auto-Stop) wird im Script selbst berechnet – volle Kontrolle,
+  einfach nachvollziehbar. Bewusst **kein** `CharacterBody3D` (für laufende Figuren
+  gedacht) und **kein** `RigidBody3D` (Engine würde gegen präzisen Auto-Stop/Maus-Aim
+  arbeiten) für den Prototyp.
+- **⚠ MUSS später ergänzt werden (auf jeden Fall):** Kollisionen und Abpraller
+  (Schiff ↔ Asteroiden, Schiff ↔ Wand) – via `Area3D`/`CharacterBody3D` oder
+  Umstieg auf Physik-Körper. Bewusst nach hinten geschoben, aber fest eingeplant.
+
 ### Auto-Stop (X-Taste) – Verhalten
 
 - Ein Druck auf **X** aktiviert den Auto-Stop (Taste muss **nicht** gehalten werden).
@@ -65,6 +76,10 @@ aussehen. Vorbild für Look & Feel ist **Star Valor**.
 - Gameplay findet auf einer flachen Ebene statt (Top-Down, wie Star Valor).
 - Die Objekte darauf (Schiff, Asteroiden) sind echte 3D-Modelle, die sich drehen können.
 - **Kein** echtes Hoch-/Runter-Fliegen – die Bewegung bleibt auf der Ebene.
+- **Die Sektor-Ebene ist KEIN sichtbares Mesh.** Sie ist nur eine logische Höhe (XZ-Ebene
+  bei y=0), auf der alles liegt. Der Hintergrund wird über eine **Skybox**
+  (`WorldEnvironment` + Sky-Material: Sterne/Nebel/Weltraum) realisiert, nicht über eine
+  gemalte Hintergrund-Plane. Wirkt nie "flach" und geht in alle Richtungen.
 
 ### Sektoren
 
@@ -111,13 +126,37 @@ Frischer Neustart als `StarVoyage_Prototype` (das alte `ShipDemo` ist verworfen)
 
 - Leeres Godot-Projekt angelegt unter `D:\Godot_Projects\StarVoyage_Prototype`.
 - Assets importiert:
-  - Schiff: `ship_002.glb` (+ Texturen `ship_002_0.png`, `ship_002_1.png`)
-  - Asteroid: `asteroid_001.glb` (+ Texturen `asteroid_001_0.png`, `asteroid_001_1.png`)
+  - Schiff: `ship_002.glb` (~9.842 Faces / 11.191 Verts – game-ready)
+  - Asteroid: `asteroid_001.glb`
 - Git-Repo initialisiert und zu GitHub gepusht (public):
   `github.com/CptHectorX/StarVoyage_Prototype`
 - Godots Standard-`.gitignore` schließt `.godot/`-Cache aus.
 - **Konvention:** Code, Commit-Messages, Variablen und Kommentare auf **Englisch**.
-- Noch **keine** Szene/Steuerung gebaut – das ist Schritt 1.
+
+### Szenen-Struktur (`main.tscn`)
+
+Saubere Trennung von Logik und Mesh (bewusst so aufgebaut):
+
+```
+Main (Node3D)              ← Welt-Wurzel / Container
+├── Player (Node3D)        ← reine Logik + Steuerung (player.gd)
+│   ├── ShipModel (glb)    ← nur Mesh; Rotation Y = -180 (Nase auf -Z ausgerichtet)
+│   └── Camera3D           ← Top-Down: Pos (0,5,0), Rot X -90
+├── asteroid_001 … 010     ← Test-Asteroiden zum Sichtbarmachen der Bewegung
+```
+
+- **Wichtig gelernt:** Das Script gehört an `Player` (Logik), nicht ans `ShipModel`.
+  Die Mesh-Ausrichtung wird am `ShipModel` korrigiert (Rot Y -180), damit `player.gd`
+  mit der sauberen Konvention "vorne = -Z" arbeiten kann.
+
+### Erledigt (Steuerung Grundgerüst)
+
+- Input Map: `thrust_forward` (W), `thrust_back` (S), `strafe_left` (A),
+  `strafe_right` (D), `auto_stop` (X).
+- `player.gd` mit Newton-Physik: Velocity-Vektor, Schub addiert Beschleunigung,
+  `max_speed`-Cap, Gleiten ohne automatisches Abbremsen. Getestet – W/S/A/D + Gleiten
+  funktionieren.
+- **Noch offen in Schritt 1:** Maus-Drehung (Aim) und Auto-Stop (X-Logik).
 
 ---
 
@@ -163,7 +202,9 @@ Frischer Neustart als `StarVoyage_Prototype` (das alte `ShipDemo` ist verworfen)
 | – | Frischer Projekt-Neustart `StarVoyage_Prototype` | ✅ erledigt |
 | – | Assets importiert (Schiff + Asteroid) | ✅ erledigt |
 | – | Git-Repo + GitHub-Push (public) | ✅ erledigt |
-| 1 | Steuerung: Newton + Maus-Aim + WASD + Auto-Stop (X) | ⬜ offen (nächster Schritt) |
+| – | Saubere Szenen-Struktur (Player/ShipModel/Camera) | ✅ erledigt |
+| 1a | Steuerung: Newton + WASD-Schub | ✅ erledigt |
+| 1b | Steuerung: Maus-Aim + Auto-Stop (X) | ⬜ offen (nächster Schritt) |
 | 2 | Kamera: Top-Down + Zoom | ⬜ offen |
 | 3 | Raumstaub-Partikel | ⬜ offen |
 | 4 | Sektor-Grenze (rote Wand) | ⬜ offen |
@@ -172,14 +213,15 @@ Frischer Neustart als `StarVoyage_Prototype` (das alte `ShipDemo` ist verworfen)
 
 ### Verlauf (neueste zuerst)
 
-- **28.06.2026** – Frischer Neustart: altes `ShipDemo` verworfen, neues Projekt
-  `StarVoyage_Prototype` angelegt. Schiff- (`ship_002`) und Asteroiden-Assets
-  (`asteroid_001`) importiert. Git-Repo initialisiert und public zu GitHub gepusht.
-  Konvention: alles im Code auf Englisch. SDD ins Repo aufgenommen.
-- **28.06.2026** – SDD erstellt und finalisiert. Konzept, Steuerung, Architektur und
-  Risiken festgehalten.
-- **28.06.2026** – Performance-Baseline (altes Projekt) gemessen: ~940k Primitive,
-  1511 Objekte, ~208 MB Video-RAM, 24 FPS mit nur dem Schiff. Als Risiko notiert.
+- **28.06.2026** – Steuerung Grundgerüst läuft: Input Map (WASD+X) definiert, `player.gd`
+  mit Newton-Physik am `Player`-Node. Saubere Node-Struktur aufgebaut (Player=Logik,
+  ShipModel=Mesh mit Rot Y -180, Camera als Geschwister). W/S/A/D + Gleiten getestet und ok.
+  Schiff fliegt korrekt Richtung Nase. Skybox statt sichtbarer Plane beschlossen.
+- **28.06.2026** – Neues, leichtes Schiff-Mesh (~9.842 Faces) ersetzt das alte schwere
+  (~940k). Performance-Risiko damit an der Wurzel gelöst.
+- **28.06.2026** – Frischer Neustart `StarVoyage_Prototype`, Assets importiert,
+  Git-Repo public zu GitHub gepusht, SDD ins Repo aufgenommen.
+- **28.06.2026** – SDD erstellt und finalisiert.
 
 ### Notizen für die nächste Session
 
